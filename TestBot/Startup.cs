@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Bot.Builder.AI.QnA;
 
 using TestBot.Bots;
+using Microsoft.BotBuilderSamples;
 
 namespace TestBot
 {
@@ -34,7 +35,7 @@ namespace TestBot
             services.AddSingleton<IBotFrameworkHttpAdapter, AdapterWithErrorHandler>();
 
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
-            services.AddTransient<IBot, EchoBot>();
+            services.AddTransient<IBot, CustomPromptBot>();
 
             services.AddSingleton(new QnAMakerEndpoint
             {
@@ -42,6 +43,24 @@ namespace TestBot
                 EndpointKey = Configuration.GetValue<string>($"QnAAuthKey"),
                 Host = Configuration.GetValue<string>($"QnAEndpointHostName")
             });
+            var storage = new MemoryStorage();
+            var userState = new UserState(storage);
+            services.AddSingleton(userState);
+
+            // Create the Conversation state passing in the storage layer.
+            var conversationState = new ConversationState(storage);
+            services.AddSingleton(conversationState);
+
+            // Create the storage we'll be using for User and Conversation state. (Memory is great for testing purposes.)
+            services.AddSingleton<IStorage, MemoryStorage>();
+
+            // Create the User state.
+            services.AddSingleton<UserState>();
+
+            // Create the Conversation state.
+            services.AddSingleton<ConversationState>();
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -62,5 +81,9 @@ namespace TestBot
             //app.UseHttpsRedirection();
             app.UseMvc();
         }
+
+
+
+
     }
 }
